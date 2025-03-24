@@ -10,10 +10,42 @@
     }
 
     body {
-      height: 100vh;
+      min-height: 100vh;
       font-family: system-ui, -apple-system, sans-serif;
       background: #000;
       transition: background-color 0.5s ease;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    
+    #visitor-counter {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 100;
+      pointer-events: none;
+    }
+    
+    #count-display {
+      background: rgba(0, 0, 0, 0.7);
+      color: #0f0;
+      padding: 3px 8px;
+      display: inline-block;
+      border-radius: 3px;
+      font-family: monospace;
+      letter-spacing: 2px;
+      height: 24px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(2px);
+    }
+    
+    .dark #count-display {
+      background: rgba(0, 0, 0, 0.7);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     }
 
     input {
@@ -137,6 +169,10 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div id="visitor-counter">
+    <div id="count-display"></div>
   </div>
 
   <script>
@@ -406,6 +442,107 @@
       lastKey = currentKey;
     });
 
+    // Visitor counter with animation
+    function setupCounter() {
+      const countDisplay = document.getElementById('count-display');
+      let currentValue = 0;
+      let previousValue = 0;
+      
+      // Create digit containers
+      for (let i = 0; i < 6; i++) {
+        const digitContainer = document.createElement('div');
+        digitContainer.className = 'digit-container';
+        digitContainer.style.display = 'inline-block';
+        digitContainer.style.position = 'relative';
+        digitContainer.style.width = '0.6em';
+        digitContainer.style.height = '1em';
+        digitContainer.style.overflow = 'hidden';
+        digitContainer.style.verticalAlign = 'top';
+        
+        // Create the two digit slots (current and next)
+        const currentDigit = document.createElement('div');
+        currentDigit.className = 'current-digit';
+        currentDigit.style.position = 'absolute';
+        currentDigit.style.top = '0';
+        currentDigit.style.left = '0';
+        currentDigit.style.width = '100%';
+        currentDigit.style.transition = 'top 0.3s ease-in-out';
+        currentDigit.textContent = '0';
+        
+        const nextDigit = document.createElement('div');
+        nextDigit.className = 'next-digit';
+        nextDigit.style.position = 'absolute';
+        nextDigit.style.top = '100%';
+        nextDigit.style.left = '0';
+        nextDigit.style.width = '100%';
+        nextDigit.style.transition = 'top 0.3s ease-in-out';
+        nextDigit.textContent = '0';
+        
+        digitContainer.appendChild(currentDigit);
+        digitContainer.appendChild(nextDigit);
+        countDisplay.appendChild(digitContainer);
+      }
+      
+      // Function to update the counter display
+      function updateCounterDisplay(newValue) {
+        if (newValue === currentValue) return;
+        
+        previousValue = currentValue;
+        currentValue = newValue;
+        
+        const prevDigits = previousValue.toString().padStart(6, '0');
+        const newDigits = currentValue.toString().padStart(6, '0');
+        
+        const digitContainers = countDisplay.querySelectorAll('.digit-container');
+        
+        // Update each digit with animation if it changed
+        for (let i = 0; i < 6; i++) {
+          if (prevDigits[i] !== newDigits[i]) {
+            const container = digitContainers[i];
+            const currentDigit = container.querySelector('.current-digit');
+            const nextDigit = container.querySelector('.next-digit');
+            
+            // Set the next digit value
+            nextDigit.textContent = newDigits[i];
+            
+            // Start animation
+            currentDigit.style.top = '-100%';
+            nextDigit.style.top = '0';
+            
+            // Reset after animation completes
+            setTimeout(() => {
+              currentDigit.style.transition = 'none';
+              nextDigit.style.transition = 'none';
+              
+              currentDigit.textContent = newDigits[i];
+              currentDigit.style.top = '0';
+              
+              nextDigit.style.top = '100%';
+              
+              // Restore transitions
+              setTimeout(() => {
+                currentDigit.style.transition = 'top 0.3s ease-in-out';
+                nextDigit.style.transition = 'top 0.3s ease-in-out';
+              }, 20);
+            }, 300);
+          }
+        }
+      }
+      
+      // Fetch initial count from CountAPI
+      fetch('https://api.countapi.xyz/hit/airstrike-github-hex/visits')
+        .then(response => response.json())
+        .then(data => {
+          updateCounterDisplay(data.value);
+        })
+        .catch(() => {
+          // Fallback to local storage if API fails
+          const localCount = parseInt(localStorage.getItem('visitorCount') || '0');
+          updateCounterDisplay(localCount);
+          localStorage.setItem('visitorCount', (localCount + 1).toString());
+        });
+    }
+    
     // Set random color and focus hex field on page load
     window.addEventListener('load', () => {
       const randomColor = getRandomColor();
@@ -419,6 +556,9 @@
       }
       
       hexInput.focus();
+      
+      // Setup visitor counter
+      setupCounter();
     });
   </script>
 </body>
