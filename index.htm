@@ -539,45 +539,75 @@
       }
       
       // Fetch initial count from CountAPI
-      fetch('https://api.countapi.xyz/get/airstrike-github-hex/visits')
-        .then(response => response.json())
-        .then(data => {
-          const initialValue = data.value || 0;
-          
-          // Set initial value without animation
-          updateCounterDisplay(initialValue, false);
-          
-          // Show the counter
+      function initCounter() {
+        fetch('https://api.countapi.xyz/get/airstrike-github-hex/visits')
+          .then(response => response.json())
+          .then(data => {
+            const initialValue = data.value || 0;
+            
+            // Set initial value without animation
+            updateCounterDisplay(initialValue, false);
+            
+            // Show the counter
+            visitorCounter.style.opacity = '1';
+            
+            // After a short delay, increment and animate
+            setTimeout(() => {
+              // Increment the counter
+              fetch('https://api.countapi.xyz/hit/airstrike-github-hex/visits')
+                .then(response => response.json())
+                .then(data => {
+                  // Animate to the incremented value
+                  updateCounterDisplay(data.value);
+                })
+                .catch(err => {
+                  console.error('Error incrementing counter:', err);
+                  // Make sure counter stays visible even if increment fails
+                  visitorCounter.style.opacity = '1';
+                });
+            }, 1500);
+          })
+          .catch(err => {
+            console.error('Error initializing counter:', err);
+            // Fallback to local storage if API fails
+            const localCount = parseInt(localStorage.getItem('visitorCount') || '0');
+            
+            // Set initial value without animation
+            updateCounterDisplay(localCount, false);
+            
+            // Show the counter
+            visitorCounter.style.opacity = '1';
+            
+            // After a short delay, increment and animate
+            setTimeout(() => {
+              const newCount = localCount + 1;
+              localStorage.setItem('visitorCount', newCount.toString());
+              updateCounterDisplay(newCount);
+            }, 1500);
+          });
+      }
+      
+      // Call the init function
+      initCounter();
+      
+      // Sometimes the API can time out or fail, let's make sure the counter appears
+      setTimeout(() => {
+        if (parseFloat(visitorCounter.style.opacity) < 0.1) {
+          console.log('Counter failed to initialize, using fallback');
+          // Force counter to show
           visitorCounter.style.opacity = '1';
           
-          // After a short delay, increment and animate
-          setTimeout(() => {
-            // Increment the counter
-            fetch('https://api.countapi.xyz/hit/airstrike-github-hex/visits')
-              .then(response => response.json())
-              .then(data => {
-                // Animate to the incremented value
-                updateCounterDisplay(data.value);
-              });
-          }, 1500);
-        })
-        .catch(() => {
-          // Fallback to local storage if API fails
+          // Use localStorage as fallback
           const localCount = parseInt(localStorage.getItem('visitorCount') || '0');
-          
-          // Set initial value without animation
           updateCounterDisplay(localCount, false);
           
-          // Show the counter
-          visitorCounter.style.opacity = '1';
-          
-          // After a short delay, increment and animate
           setTimeout(() => {
             const newCount = localCount + 1;
             localStorage.setItem('visitorCount', newCount.toString());
             updateCounterDisplay(newCount);
-          }, 1500);
-        });
+          }, 500);
+        }
+      }, 3000);
     }
     
     // Set random color and focus hex field on page load
