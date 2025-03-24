@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #ffd454;
+      transition: background-color 0.2s ease;
+    }
+
+    input {
+      display: block;
+      width: 335px;
+      font-size: 34px;
+      line-height: 44px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px dotted rgba(0, 0, 0, 0.4);
+      padding: 5px 0;
+      border-radius: 0;
+      margin-bottom: 15px;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-bottom-color: rgba(0, 0, 0, 0.8);
+    }
+
+    #wrap {
+      position: absolute;
+      width: 340px;
+      height: 125px;
+      top: 50%;
+      left: 50%;
+      margin: -62.5px -170px;
+    }
+
+    .dark input {
+      color: #fff;
+      border-bottom-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .dark input:focus {
+      border-bottom-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .dark input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    input::placeholder {
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    @media only screen and (max-width: 400px) {
+      input {
+        width: 280px;
+        font-size: 28px;
+        line-height: 40px;
+      }
+      #wrap {
+        width: 280px;
+        margin-left: -140px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <input id="hex" type="text" placeholder="hex" autocomplete="off">
+    <input id="rgb" type="text" placeholder="rgb" autocomplete="off">
+  </div>
+
+  <script>
+    const hexInput = document.getElementById('hex');
+    const rgbInput = document.getElementById('rgb');
+
+    // Parse hex in various formats
+    function parseHex(hex) {
+      // Remove any non-hex characters and handle 0x prefix
+      hex = hex.replace(/^0x/i, '').replace(/[^0-9a-f]/gi, '');
+
+      if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      }
+      if (!/^[0-9a-f]{6}$/i.test(hex)) return null;
+
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return [r, g, b];
+    }
+
+    // Parse RGB with format detection
+    function parseRgb(input) {
+      // Store the format for later use
+      let format = 'rgb';  // default
+
+      if (input.includes(',')) format = 'comma';
+      else if (input.includes(' ')) format = 'space';
+
+      // Extract numbers
+      const numbers = input.split(/[^0-9.-]+/).filter(n => n !== '');
+      if (numbers.length >= 3) {
+        const rgb = numbers.slice(0, 3).map(n => parseInt(n));
+        if (rgb.every(n => !isNaN(n) && n >= 0 && n <= 255)) {
+          return { values: rgb, format };
+        }
+      }
+
+      return null;
+    }
+
+    // Format RGB values according to specified format
+    function formatRgb(rgb, format) {
+      switch (format) {
+        case 'rgb':
+          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+        case 'comma':
+          return `${rgb[0]}, ${rgb[1]}, ${rgb[2]}`;
+        case 'space':
+          return `${rgb[0]} ${rgb[1]} ${rgb[2]}`;
+        default:
+          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+      }
+    }
+
+    // Format hex values according to format
+    function formatHex([r, g, b], format = '#') {
+      const toHex = x => {
+        const hex = x.toString(16).padStart(2, '0');
+        return hex;
+      };
+
+      const hexStr = toHex(r) + toHex(g) + toHex(b);
+      switch (format) {
+        case '#':
+          return '#' + hexStr;
+        case '0x':
+          return '0x' + hexStr;
+        default:
+          return hexStr;
+      }
+    }
+
+    // Detect current hex format
+    function detectHexFormat(hex) {
+      if (hex.startsWith('0x')) return '0x';
+      if (hex.startsWith('#')) return '#';
+      return '';
+    }
+
+    // Detect current RGB format
+    function detectRgbFormat(rgb) {
+      if (rgb.startsWith('rgb')) return 'rgb';
+      if (rgb.includes(',')) return 'comma';
+      if (rgb.includes(' ')) return 'space';
+      return 'rgb';  // default
+    }
+
+    // Calculate if background is dark
+    function isDark(r, g, b) {
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness < 125;
+    }
+
+        // Get current color values regardless of format
+    function getCurrentColor() {
+      // Try hex first
+      let rgb = parseHex(hexInput.value);
+      if (rgb) return rgb;
+
+      // Try RGB next
+      const result = parseRgb(rgbInput.value);
+      if (result) return result.values;
+
+      return null;
+    }
+
+    // Update the UI with new color
+    function updateColor(rgb, sourceInput) {
+      if (!rgb) return;
+
+      // Preserve formats when updating
+      if (sourceInput === hexInput) {
+        const currentRgbFormat = detectRgbFormat(rgbInput.value);
+        rgbInput.value = formatRgb(rgb, currentRgbFormat);
+      } else {
+        const currentHexFormat = detectHexFormat(hexInput.value);
+        hexInput.value = formatHex(rgb, currentHexFormat);
+      }
+
+      // Update background
+      document.body.style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+
+      // Update text color based on brightness
+      if (isDark(...rgb)) {
+        document.body.classList.add('dark');
+      } else {
+        document.body.classList.remove('dark');
+      }
+    }
+
+    // Handle hex input
+    hexInput.addEventListener('input', (e) => {
+      const rgb = parseHex(e.target.value);
+      if (rgb) {
+        updateColor(rgb, hexInput);
+      }
+    });
+
+    // Handle RGB input
+    rgbInput.addEventListener('input', (e) => {
+      const result = parseRgb(e.target.value);
+      if (result) {
+        updateColor(result.values, rgbInput);
+      }
+    });
+
+    // New keyboard shortcut handling
+    document.addEventListener('keydown', (e) => {
+      const rgb = getCurrentColor();
+      if (!rgb) return;
+
+      // RGB format shortcuts
+      if (e.key === 'h') {
+        rgbInput.value = formatRgb(rgb, 'rgb');
+        e.preventDefault();
+      } else if (e.key === 'j') {
+        rgbInput.value = formatRgb(rgb, 'comma');
+        e.preventDefault();
+      } else if (e.key === 'k') {
+        rgbInput.value = formatRgb(rgb, 'space');
+        e.preventDefault();
+      }
+
+      // HEX format shortcuts
+      else if (e.key === 'y') {
+        hexInput.value = formatHex(rgb, '0x');
+        e.preventDefault();
+      } else if (e.key === 'u') {
+        hexInput.value = formatHex(rgb, '#');
+        e.preventDefault();
+      } else if (e.key === 'i') {
+        hexInput.value = formatHex(rgb, '');
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>
