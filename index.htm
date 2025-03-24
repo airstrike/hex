@@ -127,13 +127,13 @@
       <div class="shortcut-columns">
         <div class="shortcut-group">
           <span class="shortcut"><kbd>u</kbd> #fff</span>
-          <span class="shortcut"><kbd>y</kbd> 0xfff</span>
-          <span class="shortcut"><kbd>i</kbd> fff</span>
+          <span class="shortcut"><kbd>i</kbd> 0xfff</span>
+          <span class="shortcut"><kbd>o</kbd> fff</span>
         </div>
         <div class="shortcut-group">
-          <span class="shortcut"><kbd>h</kbd> rgb(r, g, b)</span>
-          <span class="shortcut"><kbd>j</kbd> r,g,b</span>
-          <span class="shortcut"><kbd>k</kbd> r g b</span>
+          <span class="shortcut"><kbd>j</kbd> rgb(r, g, b)</span>
+          <span class="shortcut"><kbd>k</kbd> r,g,b</span>
+          <span class="shortcut"><kbd>l</kbd> r g b</span>
         </div>
       </div>
     </div>
@@ -287,29 +287,34 @@
 
     // New keyboard shortcut handling
     document.addEventListener('keydown', (e) => {
+      // Always prevent default for our shortcut keys if not in an input field
+      if (!e.target.matches('input') && ['j', 'k', 'l', 'u', 'i', 'o'].includes(e.key)) {
+        e.preventDefault();
+      }
+      
       const rgb = getCurrentColor();
       if (!rgb) return;
 
       // RGB format shortcuts
-      if (e.key === 'h') {
+      if (e.key === 'j') {
         rgbInput.value = formatRgb(rgb, 'rgb');
         e.preventDefault();
-      } else if (e.key === 'j') {
+      } else if (e.key === 'k') {
         rgbInput.value = formatRgb(rgb, 'comma');
         e.preventDefault();
-      } else if (e.key === 'k') {
+      } else if (e.key === 'l') {
         rgbInput.value = formatRgb(rgb, 'space');
         e.preventDefault();
       }
 
       // HEX format shortcuts
-      else if (e.key === 'y') {
+      else if (e.key === 'i') {
         hexInput.value = formatHex(rgb, '0x');
         e.preventDefault();
       } else if (e.key === 'u') {
         hexInput.value = formatHex(rgb, '#');
         e.preventDefault();
-      } else if (e.key === 'i') {
+      } else if (e.key === 'o') {
         hexInput.value = formatHex(rgb, '');
         e.preventDefault();
       }
@@ -322,6 +327,84 @@
       const b = Math.floor(Math.random() * 256);
       return [r, g, b];
     }
+
+    let lastKey = '';
+    let logo = null;
+    let posX = 20;
+    let posY = 20;
+    let velX = 1;
+    let velY = 1;
+    let animationId = null;
+
+    function create() {
+      if (logo) return;
+      
+      logo = document.createElement('div');
+      logo.style.position = 'absolute';
+      logo.style.width = '180px';
+      logo.style.height = '60px';
+      logo.style.backgroundColor = '#fb651e';
+      logo.style.color = 'white';
+      logo.style.display = 'flex';
+      logo.style.alignItems = 'center';
+      logo.style.justifyContent = 'center';
+      logo.style.fontSize = '20px';
+      logo.style.fontWeight = 'bold';
+      logo.style.borderRadius = '4px';
+      logo.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+      logo.style.zIndex = '1000';
+      logo.style.userSelect = 'none';
+      logo.style.left = `${posX}px`;
+      logo.style.top = `${posY}px`;
+      logo.textContent = 'Hello, HN!';
+      
+      document.body.appendChild(logo);
+    }
+
+    function animate() {
+      if (!logo) return;
+      
+      const maxX = window.innerWidth - logo.offsetWidth;
+      const maxY = window.innerHeight - logo.offsetHeight;
+      
+      posX += velX;
+      posY += velY;
+      
+      if (posX <= 0 || posX >= maxX) {
+        velX = -velX;
+        posX = posX <= 0 ? 0 : maxX;
+      }
+      
+      if (posY <= 0 || posY >= maxY) {
+        velY = -velY;
+        posY = posY <= 0 ? 0 : maxY;
+      }
+      
+      logo.style.left = `${posX}px`;
+      logo.style.top = `${posY}px`;
+      
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function activate() {
+      document.body.style.backgroundColor = '#f6f6ef';
+      document.body.classList.remove('dark');
+      
+      document.getElementById('wrap').innerHTML = '';
+      
+      create();
+      animate();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const currentKey = e.key.toLowerCase();
+      
+      if (lastKey === 'h' && currentKey === 'n') {
+        activate();
+      }
+      
+      lastKey = currentKey;
+    });
 
     // Set random color and focus hex field on page load
     window.addEventListener('load', () => {

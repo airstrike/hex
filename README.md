@@ -19,14 +19,14 @@ A simple web app for converting between HEX and RGB color formats.
 ### Keyboard Shortcuts
 
 **RGB Format Shortcuts:**
-- `h` - Switch to rgb(R, G, B) format
-- `j` - Switch to R, G, B format
-- `k` - Switch to R G B format
+- `j` - Switch to rgb(R, G, B) format
+- `k` - Switch to R, G, B format
+- `l` - Switch to R G B format
 
 **HEX Format Shortcuts:**
-- `y` - Switch to 0xRRGGBB format
 - `u` - Switch to #RRGGBB format
-- `i` - Switch to RRGGBB format (plain)
+- `i` - Switch to 0xRRGGBB format
+- `o` - Switch to RRGGBB format (plain)
 
 ## Demo
 
