@@ -314,6 +314,11 @@
         e.preventDefault();
       }
     });
+    
+    // Focus hex field on page load
+    window.addEventListener('load', () => {
+      hexInput.focus();
+    });
   </script>
 </body>
 </html>
