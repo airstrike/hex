@@ -540,21 +540,31 @@
       
       // Fetch initial count from CountAPI
       function initCounter() {
-        fetch('https://api.countapi.xyz/get/airstrike-github-hex/visits')
+        // Show the counter immediately with zeros first
+        updateCounterDisplay(0, false);
+        visitorCounter.style.opacity = '1';
+        
+        // Then try to get the actual value
+        fetch('https://api.countapi.xyz/get/airstrike-github-hex/visits', {
+          mode: 'cors',
+          cache: 'no-store',
+          referrerPolicy: 'no-referrer'
+        })
           .then(response => response.json())
           .then(data => {
             const initialValue = data.value || 0;
             
-            // Set initial value without animation
+            // Update with actual value without animation
             updateCounterDisplay(initialValue, false);
-            
-            // Show the counter
-            visitorCounter.style.opacity = '1';
             
             // After a short delay, increment and animate
             setTimeout(() => {
               // Increment the counter
-              fetch('https://api.countapi.xyz/hit/airstrike-github-hex/visits')
+              fetch('https://api.countapi.xyz/hit/airstrike-github-hex/visits', {
+                mode: 'cors',
+                cache: 'no-store',
+                referrerPolicy: 'no-referrer'
+              })
                 .then(response => response.json())
                 .then(data => {
                   // Animate to the incremented value
@@ -569,43 +579,39 @@
           })
           .catch(err => {
             console.error('Error initializing counter:', err);
-            // Fallback to local storage if API fails
-            const localCount = parseInt(localStorage.getItem('visitorCount') || '0');
             
-            // Set initial value without animation
-            updateCounterDisplay(localCount, false);
+            // Try direct hit as fallback with longer timeout
+            const hitController = new AbortController();
+            const hitTimeout = setTimeout(() => hitController.abort(), 5000);
             
-            // Show the counter
-            visitorCounter.style.opacity = '1';
-            
-            // After a short delay, increment and animate
-            setTimeout(() => {
-              const newCount = localCount + 1;
-              localStorage.setItem('visitorCount', newCount.toString());
-              updateCounterDisplay(newCount);
-            }, 1500);
+            fetch('https://api.countapi.xyz/hit/airstrike-github-hex/visits', {
+              mode: 'cors',
+              cache: 'no-store',
+              referrerPolicy: 'no-referrer',
+              signal: hitController.signal
+            })
+              .then(response => response.json())
+              .then(data => {
+                clearTimeout(hitTimeout);
+                // Set value without animation
+                updateCounterDisplay(data.value, false);
+              })
+              .catch(err => {
+                console.error('Final API attempt failed:', err);
+                // Counter is already visible with zeros from earlier
+              });
           });
       }
       
       // Call the init function
       initCounter();
       
-      // Sometimes the API can time out or fail, let's make sure the counter appears
+      // Safety check to ensure counter appears even if all API attempts fail
       setTimeout(() => {
         if (parseFloat(visitorCounter.style.opacity) < 0.1) {
-          console.log('Counter failed to initialize, using fallback');
-          // Force counter to show
+          console.log('Counter failed to initialize, showing empty counter');
+          // Force counter to show with zeros
           visitorCounter.style.opacity = '1';
-          
-          // Use localStorage as fallback
-          const localCount = parseInt(localStorage.getItem('visitorCount') || '0');
-          updateCounterDisplay(localCount, false);
-          
-          setTimeout(() => {
-            const newCount = localCount + 1;
-            localStorage.setItem('visitorCount', newCount.toString());
-            updateCounterDisplay(newCount);
-          }, 500);
         }
       }, 3000);
     }
