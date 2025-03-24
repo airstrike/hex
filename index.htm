@@ -38,10 +38,10 @@
     #wrap {
       position: absolute;
       width: 340px;
-      height: 125px;
+      height: 180px;
       top: 50%;
       left: 50%;
-      margin: -62.5px -170px;
+      margin: -90px -170px;
     }
 
     .dark input {
@@ -61,6 +61,48 @@
       color: rgba(0, 0, 0, 0.6);
     }
 
+    #shortcuts {
+      margin-top: 25px;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.75);
+    }
+
+    .shortcut-title {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .shortcut-columns {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .shortcut-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .shortcut kbd {
+      display: inline-block;
+      min-width: 16px;
+      padding: 1px 4px;
+      font-family: monospace;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 3px;
+      margin-right: 6px;
+    }
+
+    .dark #shortcuts {
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .dark .shortcut kbd {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
     @media only screen and (max-width: 400px) {
       input {
         width: 280px;
@@ -70,6 +112,8 @@
       #wrap {
         width: 280px;
         margin-left: -140px;
+        height: 180px;
+        margin-top: -90px;
       }
     }
   </style>
@@ -78,6 +122,21 @@
   <div id="wrap">
     <input id="hex" type="text" placeholder="hex" autocomplete="off">
     <input id="rgb" type="text" placeholder="rgb" autocomplete="off">
+    <div id="shortcuts">
+      <span class="shortcut-title">shortcuts:</span>
+      <div class="shortcut-columns">
+        <div class="shortcut-group">
+          <span class="shortcut"><kbd>u</kbd> #fff</span>
+          <span class="shortcut"><kbd>y</kbd> 0xfff</span>
+          <span class="shortcut"><kbd>i</kbd> fff</span>
+        </div>
+        <div class="shortcut-group">
+          <span class="shortcut"><kbd>h</kbd> rgb(r, g, b)</span>
+          <span class="shortcut"><kbd>j</kbd> r,g,b</span>
+          <span class="shortcut"><kbd>k</kbd> r g b</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
