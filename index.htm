@@ -12,8 +12,8 @@
     body {
       height: 100vh;
       font-family: system-ui, -apple-system, sans-serif;
-      background: #ffd454;
-      transition: background-color 0.2s ease;
+      background: #000;
+      transition: background-color 0.5s ease;
     }
 
     input {
@@ -315,8 +315,26 @@
       }
     });
     
-    // Focus hex field on page load
+    // Generate a random color
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return [r, g, b];
+    }
+
+    // Set random color and focus hex field on page load
     window.addEventListener('load', () => {
+      const randomColor = getRandomColor();
+      document.body.style.backgroundColor = `rgb(${randomColor[0]}, ${randomColor[1]}, ${randomColor[2]})`;
+      
+      // Update text color based on brightness
+      if (isDark(...randomColor)) {
+        document.body.classList.add('dark');
+      } else {
+        document.body.classList.remove('dark');
+      }
+      
       hexInput.focus();
     });
   </script>
