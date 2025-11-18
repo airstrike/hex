@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta property="og:title" content="Hex Color Converter">
-  <meta property="og:description" content="Convert between HEX and RGB color formats">
-  <meta property="og:image" content="https://hexrgb.pages.dev/preview">
+  <title>hex to rgb like it's 1999</title>
+  <meta property="og:title" content="hex to rgb like it's 1999">
+  <meta property="og:description" content="convert colors between hex and rgb formats">
+  <meta property="og:image" content="https://hexrgb.pages.dev/preview.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1337">
+  <meta property="og:image:height" content="826">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://hexrgb.pages.dev/preview">
+  <meta name="twitter:image" content="https://hexrgb.pages.dev/preview.png">
   <style>
     * {
       margin: 0;
@@ -45,8 +49,7 @@
       border-radius: 3px;
       font-family: monospace;
       letter-spacing: 2px;
-      height: 24px;
-      overflow: hidden;
+      line-height: 1em;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(2px);
     }
@@ -143,6 +146,37 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
+    .copy-indicator {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-family: monospace;
+      color: rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      animation: float-up 0.8s ease-out forwards;
+      z-index: 1000;
+    }
+
+    .dark .copy-indicator {
+      background: rgba(0, 0, 0, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    @keyframes float-up {
+      0% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-30px);
+        opacity: 0;
+      }
+    }
+
     @media only screen and (max-width: 400px) {
       input {
         width: 280px;
@@ -169,11 +203,13 @@
           <span class="shortcut"><kbd>u</kbd> #fff</span>
           <span class="shortcut"><kbd>i</kbd> 0xfff</span>
           <span class="shortcut"><kbd>o</kbd> fff</span>
+          <span class="shortcut" id="yank-hex"><kbd>y</kbd> yank hex</span>
         </div>
         <div class="shortcut-group">
           <span class="shortcut"><kbd>j</kbd> rgb(r, g, b)</span>
           <span class="shortcut"><kbd>k</kbd> r,g,b</span>
           <span class="shortcut"><kbd>l</kbd> r g b</span>
+          <span class="shortcut" id="yank-rgb"><kbd>Y</kbd> yank rgb</span>
         </div>
       </div>
     </div>
@@ -329,37 +365,78 @@
       }
     });
 
+    // Show copy indicator
+    function showCopyIndicator(sourceElementId) {
+      const sourceElement = document.getElementById(sourceElementId);
+      if (!sourceElement) return;
+
+      const indicator = document.createElement('div');
+      indicator.className = 'copy-indicator';
+      indicator.textContent = 'copied!';
+
+      const rect = sourceElement.getBoundingClientRect();
+      indicator.style.left = rect.left + 'px';
+      indicator.style.top = rect.top + 'px';
+
+      document.body.appendChild(indicator);
+
+      setTimeout(() => {
+        indicator.remove();
+      }, 800);
+    }
+
     // New keyboard shortcut handling
     document.addEventListener('keydown', (e) => {
+      // Only handle shortcuts if no modifiers are pressed (Cmd, Ctrl, Alt)
+      // Shift is allowed
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
       // Always prevent default for our shortcut keys if not in an input field
-      if (!e.target.matches('input') && ['j', 'k', 'l', 'u', 'i', 'o'].includes(e.key)) {
+      if (!e.target.matches('input') && ['j', 'k', 'l', 'u', 'i', 'o', 'y', 'Y'].includes(e.key)) {
         e.preventDefault();
       }
-      
+
       const rgb = getCurrentColor();
       if (!rgb) return;
 
-      // RGB format shortcuts
-      if (e.key === 'j') {
+      // RGB format shortcuts (shift doesn't matter)
+      if (e.key.toLowerCase() === 'j') {
         rgbInput.value = formatRgb(rgb, 'rgb');
         e.preventDefault();
-      } else if (e.key === 'k') {
+      } else if (e.key.toLowerCase() === 'k') {
         rgbInput.value = formatRgb(rgb, 'comma');
         e.preventDefault();
-      } else if (e.key === 'l') {
+      } else if (e.key.toLowerCase() === 'l') {
         rgbInput.value = formatRgb(rgb, 'space');
         e.preventDefault();
       }
 
-      // HEX format shortcuts
-      else if (e.key === 'i') {
+      // HEX format shortcuts (shift doesn't matter)
+      else if (e.key.toLowerCase() === 'i') {
         hexInput.value = formatHex(rgb, '0x');
         e.preventDefault();
-      } else if (e.key === 'u') {
+      } else if (e.key.toLowerCase() === 'u') {
         hexInput.value = formatHex(rgb, '#');
         e.preventDefault();
-      } else if (e.key === 'o') {
+      } else if (e.key.toLowerCase() === 'o') {
         hexInput.value = formatHex(rgb, '');
+        e.preventDefault();
+      }
+
+      // Copy (yank) shortcuts - shift DOES matter here
+      else if (e.key === 'y') {
+        // Yank hex
+        const hexValue = formatHex(rgb, '#');
+        navigator.clipboard.writeText(hexValue);
+        showCopyIndicator('yank-hex');
+        e.preventDefault();
+      } else if (e.key === 'Y') {
+        // Yank RGB
+        const rgbValue = formatRgb(rgb, 'rgb');
+        navigator.clipboard.writeText(rgbValue);
+        showCopyIndicator('yank-rgb');
         e.preventDefault();
       }
     });
