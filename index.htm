@@ -616,20 +616,46 @@
       }, 3000);
     }
     
-    // Set random color and focus hex field on page load
-    window.addEventListener('load', () => {
+    // Load color from URL query parameter or use random color
+    function loadInitialColor() {
+      // Check if there's a query parameter (anything after ?)
+      const queryString = window.location.search.slice(1); // Remove the '?'
+
+      if (queryString) {
+        // Try to parse as hex first
+        let rgb = parseHex(queryString);
+        if (rgb) {
+          hexInput.value = formatHex(rgb, detectHexFormat(queryString) || '#');
+          updateColor(rgb, hexInput);
+          return;
+        }
+
+        // Try to parse as RGB
+        const result = parseRgb(queryString);
+        if (result) {
+          rgbInput.value = formatRgb(result.values, result.format);
+          updateColor(result.values, rgbInput);
+          return;
+        }
+      }
+
+      // No valid query param, use random color
       const randomColor = getRandomColor();
       document.body.style.backgroundColor = `rgb(${randomColor[0]}, ${randomColor[1]}, ${randomColor[2]})`;
-      
+
       // Update text color based on brightness
       if (isDark(...randomColor)) {
         document.body.classList.add('dark');
       } else {
         document.body.classList.remove('dark');
       }
-      
+    }
+
+    // Set random color and focus hex field on page load
+    window.addEventListener('load', () => {
+      loadInitialColor();
       hexInput.focus();
-      
+
       // Setup visitor counter
       setupCounter();
     });
