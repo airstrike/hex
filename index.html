@@ -52,6 +52,8 @@
       line-height: 1em;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(2px);
+      user-select: none;
+      -webkit-user-select: none;
     }
     
     .dark #count-display {
@@ -164,6 +166,16 @@
     .dark .copy-indicator {
       background: rgba(0, 0, 0, 0.2);
       color: rgba(255, 255, 255, 0.8);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .shake {
+      animation: shake 0.3s ease-in-out;
     }
 
     @keyframes float-up {
@@ -398,6 +410,39 @@
         e.preventDefault();
       }
 
+      // Copy (yank) shortcuts - shift DOES matter here, work even without valid color
+      if (e.key === 'y') {
+        // Yank hex
+        const rgb = getCurrentColor();
+        if (rgb) {
+          const hexValue = formatHex(rgb, '#');
+          navigator.clipboard.writeText(hexValue);
+          showCopyIndicator('yank-hex');
+        } else {
+          // Shake the yank hex shortcut
+          const yankHex = document.getElementById('yank-hex');
+          yankHex.classList.add('shake');
+          setTimeout(() => yankHex.classList.remove('shake'), 300);
+        }
+        e.preventDefault();
+        return;
+      } else if (e.key === 'Y') {
+        // Yank RGB
+        const rgb = getCurrentColor();
+        if (rgb) {
+          const rgbValue = formatRgb(rgb, 'rgb');
+          navigator.clipboard.writeText(rgbValue);
+          showCopyIndicator('yank-rgb');
+        } else {
+          // Shake the yank rgb shortcut
+          const yankRgb = document.getElementById('yank-rgb');
+          yankRgb.classList.add('shake');
+          setTimeout(() => yankRgb.classList.remove('shake'), 300);
+        }
+        e.preventDefault();
+        return;
+      }
+
       const rgb = getCurrentColor();
       if (!rgb) return;
 
@@ -424,23 +469,33 @@
         hexInput.value = formatHex(rgb, '');
         e.preventDefault();
       }
+    });
 
-      // Copy (yank) shortcuts - shift DOES matter here
-      else if (e.key === 'y') {
-        // Yank hex
-        const hexValue = formatHex(rgb, '#');
-        navigator.clipboard.writeText(hexValue);
-        showCopyIndicator('yank-hex');
-        e.preventDefault();
-      } else if (e.key === 'Y') {
-        // Yank RGB
-        const rgbValue = formatRgb(rgb, 'rgb');
-        navigator.clipboard.writeText(rgbValue);
-        showCopyIndicator('yank-rgb');
-        e.preventDefault();
+    // Double-click on background to load its color
+    document.body.addEventListener('dblclick', (e) => {
+      // Only if not clicking on an input or the counter
+      if (e.target.matches('input') || e.target.closest('#visitor-counter')) {
+        return;
+      }
+
+      // Get the current background color
+      const bgColor = window.getComputedStyle(document.body).backgroundColor;
+
+      // Parse rgb(r, g, b) format
+      const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const rgb = [r, g, b];
+
+        // Update both inputs
+        hexInput.value = formatHex(rgb, '#');
+        rgbInput.value = formatRgb(rgb, 'rgb');
+        updateColor(rgb, hexInput);
       }
     });
-    
+
     // Generate a random color
     function getRandomColor() {
       const r = Math.floor(Math.random() * 256);
@@ -533,6 +588,11 @@
       const countDisplay = document.getElementById('count-display');
       let currentValue = 0;
       let previousValue = 0;
+      let realValue = 0; // The actual counter value from server
+      let inactivityTimer = null;
+      let isShuffling = false;
+      let pendingClicks = 0;
+      let animationInterval = null;
       
       // Create digit containers
       for (let i = 0; i < 6; i++) {
@@ -635,8 +695,9 @@
           .then(data => {
             const initialValue = data.value || 0;
 
-            // Update with actual value without animation
-            updateCounterDisplay(initialValue, false);
+            // Start at 1 below the initial value so we can animate
+            const startValue = Math.max(0, initialValue - 1);
+            updateCounterDisplay(startValue, false);
 
             // After a short delay, increment and animate
             setTimeout(() => {
@@ -647,6 +708,7 @@
                 .then(response => response.json())
                 .then(data => {
                   // Animate to the incremented value
+                  realValue = data.value;
                   updateCounterDisplay(data.value);
                 })
                 .catch(err => {
@@ -675,9 +737,71 @@
           });
       }
       
+      // Click handler for debugging - increment on click
+      countDisplay.style.pointerEvents = 'auto';
+
+      countDisplay.addEventListener('click', () => {
+        // Prevent clicking during shuffle
+        if (isShuffling) return;
+
+        // Clear any existing inactivity timer
+        if (inactivityTimer) {
+          clearTimeout(inactivityTimer);
+        }
+
+        // Always increment pending steps
+        pendingClicks++;
+
+        // Start animation loop if not already running
+        if (!animationInterval) {
+          const processNextStep = () => {
+            if (pendingClicks > 0) {
+              pendingClicks--;
+              updateCounterDisplay(currentValue + 1);
+
+              // Continue processing after 100ms
+              animationInterval = setTimeout(processNextStep, 100);
+            } else {
+              // No more pending steps
+              animationInterval = null;
+            }
+          };
+
+          // Start after 100ms delay
+          animationInterval = setTimeout(processNextStep, 100);
+        }
+
+        // After 1 second of inactivity, shuffle back to real value
+        inactivityTimer = setTimeout(() => {
+          // Stop the animation loop
+          if (animationInterval) {
+            clearTimeout(animationInterval);
+            animationInterval = null;
+          }
+          pendingClicks = 0;
+
+          isShuffling = true;
+
+          // Shuffle through random numbers for fun
+          let shuffleCount = 0;
+          const shuffleInterval = setInterval(() => {
+            const randomValue = Math.floor(Math.random() * 999999);
+            updateCounterDisplay(randomValue);
+            shuffleCount++;
+
+            if (shuffleCount >= 8) {
+              clearInterval(shuffleInterval);
+              // Return to real value
+              updateCounterDisplay(realValue);
+              isShuffling = false;
+            }
+          }, 50);
+        }, 1000);
+      });
+
       // Call the init function
       initCounter();
-      
+
       // Safety check to ensure counter appears even if all API attempts fail
       setTimeout(() => {
         if (parseFloat(visitorCounter.style.opacity) < 0.1) {
@@ -690,20 +814,25 @@
     
     // Load color from URL query parameter or use random color
     function loadInitialColor() {
-      // Check if there's a query parameter (anything after ?)
+      // Try multiple sources: query string, hash, and path
       const queryString = window.location.search.slice(1); // Remove the '?'
+      const hashString = window.location.hash.slice(1); // Remove the '#'
+      const pathString = window.location.pathname.slice(1); // Remove the leading '/'
 
-      if (queryString) {
+      // Try in order: query > hash > path
+      const colorSource = queryString || hashString || (pathString && pathString !== 'index.html' && pathString !== 'index.htm' ? pathString : '');
+
+      if (colorSource) {
         // Try to parse as hex first
-        let rgb = parseHex(queryString);
+        let rgb = parseHex(colorSource);
         if (rgb) {
-          hexInput.value = formatHex(rgb, detectHexFormat(queryString) || '#');
+          hexInput.value = formatHex(rgb, detectHexFormat(colorSource) || '#');
           updateColor(rgb, hexInput);
           return;
         }
 
         // Try to parse as RGB
-        const result = parseRgb(queryString);
+        const result = parseRgb(colorSource);
         if (result) {
           rgbInput.value = formatRgb(result.values, result.format);
           updateColor(result.values, rgbInput);

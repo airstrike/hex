@@ -12,13 +12,23 @@ export async function onRequest(context) {
     return handleCounterHit(env, request);
   }
 
-  // For index requests with query params, inject dynamic meta tags
-  if (url.pathname === '/index.htm' || url.pathname === '/index.html' || url.pathname === '/') {
-    const queryString = url.search.slice(1);
+  // For index requests or color paths, inject dynamic meta tags
+  const isIndexPath = url.pathname === '/index.htm' || url.pathname === '/index.html' || url.pathname === '/';
+  const isPotentialColorPath = !isIndexPath && !url.pathname.startsWith('/counter/') && !url.pathname.startsWith('/preview') && !url.pathname.startsWith('/functions/');
 
-    if (queryString) {
+  if (isIndexPath || isPotentialColorPath) {
+    // Try query string first, then path
+    const queryString = url.search.slice(1);
+    let colorParam = queryString;
+
+    if (!colorParam && isPotentialColorPath) {
+      // Use path as color (e.g., /ff6600 or /0xff6600)
+      colorParam = url.pathname.slice(1);
+    }
+
+    if (colorParam) {
       // Parse color - take first part before any & (to handle cache-busting params)
-      const firstParam = queryString.split('&')[0];
+      const firstParam = colorParam.split('&')[0];
       let hex = firstParam.replace(/^0x/i, '').replace(/^#/, '').replace(/[^0-9a-f]/gi, '');
       if (hex.length === 3) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
@@ -104,6 +114,7 @@ function getCSSColorName(hex) {
     '800000': 'maroon', '808000': 'olive', '008000': 'green', '800080': 'purple', '008080': 'teal',
     '000080': 'navy', 'ffa500': 'orange', 'ffc0cb': 'pink', 'a52a2a': 'brown', 'f0e68c': 'khaki',
     '4b0082': 'indigo', 'ee82ee': 'violet', 'dda0dd': 'plum', 'fa8072': 'salmon', 'f08080': 'lightcoral',
+    '663399': 'rebeccapurple', '001ced': 'iced',
     'cd5c5c': 'indianred', 'dc143c': 'crimson', 'ff1493': 'deeppink', 'ff69b4': 'hotpink',
     'ffd700': 'gold', 'f5f5dc': 'beige', 'ffe4b5': 'moccasin', 'ffdab9': 'peachpuff', 'ffdead': 'navajowhite',
     'ffe4e1': 'mistyrose', 'fffacd': 'lemonchiffon', 'fff8dc': 'cornsilk', 'fffaf0': 'floralwhite',
