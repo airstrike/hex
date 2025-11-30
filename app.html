@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>hex to rgb like it's 1999</title>
+  <meta property="og:title" content="hex to rgb like it's 1999">
+  <meta property="og:description" content="convert colors between hex and rgb formats">
+  <meta property="og:image" content="https://hexrgb.pages.dev/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1337">
+  <meta property="og:image:height" content="826">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://hexrgb.pages.dev/og-image.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #000;
+      transition: background-color 0.5s ease;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    
+    #visitor-counter {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    
+    #count-display {
+      background: rgba(0, 0, 0, 0.7);
+      color: #0f0;
+      padding: 3px 8px;
+      display: inline-block;
+      border-radius: 3px;
+      font-family: monospace;
+      letter-spacing: 2px;
+      line-height: 1em;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(2px);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    .dark #count-display {
+      background: rgba(0, 0, 0, 0.7);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    input {
+      display: block;
+      width: 335px;
+      font-size: 34px;
+      line-height: 44px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px dotted rgba(0, 0, 0, 0.4);
+      padding: 5px 0;
+      border-radius: 0;
+      margin-bottom: 15px;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-bottom-color: rgba(0, 0, 0, 0.8);
+    }
+
+    #wrap {
+      position: absolute;
+      width: 340px;
+      height: 180px;
+      top: 50%;
+      left: 50%;
+      margin: -90px -170px;
+    }
+
+    .dark input {
+      color: #fff;
+      border-bottom-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .dark input:focus {
+      border-bottom-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .dark input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    input::placeholder {
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    #shortcuts {
+      margin-top: 25px;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.75);
+    }
+
+    .shortcut-title {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .shortcut-columns {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .shortcut-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .shortcut kbd {
+      display: inline-block;
+      min-width: 16px;
+      padding: 1px 4px;
+      font-family: monospace;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 3px;
+      margin-right: 6px;
+    }
+
+    .dark #shortcuts {
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .dark .shortcut kbd {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .copy-indicator {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-family: monospace;
+      color: rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      animation: float-up 0.8s ease-out forwards;
+      z-index: 1000;
+    }
+
+    .dark .copy-indicator {
+      background: rgba(0, 0, 0, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .shake {
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes float-up {
+      0% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-30px);
+        opacity: 0;
+      }
+    }
+
+    @media only screen and (max-width: 400px) {
+      input {
+        width: 280px;
+        font-size: 28px;
+        line-height: 40px;
+      }
+      #wrap {
+        width: 280px;
+        margin-left: -140px;
+        height: 180px;
+        margin-top: -90px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <input id="hex" type="text" placeholder="hex" autocomplete="off">
+    <input id="rgb" type="text" placeholder="rgb" autocomplete="off">
+    <div id="shortcuts">
+      <span class="shortcut-title">shortcuts:</span>
+      <div class="shortcut-columns">
+        <div class="shortcut-group">
+          <span class="shortcut"><kbd>u</kbd> #fff</span>
+          <span class="shortcut"><kbd>i</kbd> 0xfff</span>
+          <span class="shortcut"><kbd>o</kbd> fff</span>
+          <span class="shortcut" id="yank-hex"><kbd>y</kbd> yank hex</span>
+        </div>
+        <div class="shortcut-group">
+          <span class="shortcut"><kbd>j</kbd> rgb(r, g, b)</span>
+          <span class="shortcut"><kbd>k</kbd> r,g,b</span>
+          <span class="shortcut"><kbd>l</kbd> r g b</span>
+          <span class="shortcut" id="yank-rgb"><kbd>Y</kbd> yank rgb</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="visitor-counter">
+    <div id="count-display"></div>
+  </div>
+
+  <script>
+    const hexInput = document.getElementById('hex');
+    const rgbInput = document.getElementById('rgb');
+
+    // Parse hex in various formats
+    function parseHex(hex) {
+      // Remove any non-hex characters and handle 0x prefix
+      hex = hex.replace(/^0x/i, '').replace(/[^0-9a-f]/gi, '');
+
+      if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      }
+      if (!/^[0-9a-f]{6}$/i.test(hex)) return null;
+
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return [r, g, b];
+    }
+
+    // Parse RGB with format detection
+    function parseRgb(input) {
+      // Store the format for later use
+      let format = 'rgb';  // default
+
+      if (input.includes(',')) format = 'comma';
+      else if (input.includes(' ')) format = 'space';
+
+      // Extract numbers
+      const numbers = input.split(/[^0-9.-]+/).filter(n => n !== '');
+      if (numbers.length >= 3) {
+        const rgb = numbers.slice(0, 3).map(n => parseInt(n));
+        if (rgb.every(n => !isNaN(n) && n >= 0 && n <= 255)) {
+          return { values: rgb, format };
+        }
+      }
+
+      return null;
+    }
+
+    // Format RGB values according to specified format
+    function formatRgb(rgb, format) {
+      switch (format) {
+        case 'rgb':
+          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+        case 'comma':
+          return `${rgb[0]}, ${rgb[1]}, ${rgb[2]}`;
+        case 'space':
+          return `${rgb[0]} ${rgb[1]} ${rgb[2]}`;
+        default:
+          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+      }
+    }
+
+    // Format hex values according to format
+    function formatHex([r, g, b], format = '#') {
+      const toHex = x => {
+        const hex = x.toString(16).padStart(2, '0');
+        return hex;
+      };
+
+      const hexStr = toHex(r) + toHex(g) + toHex(b);
+      switch (format) {
+        case '#':
+          return '#' + hexStr;
+        case '0x':
+          return '0x' + hexStr;
+        default:
+          return hexStr;
+      }
+    }
+
+    // Detect current hex format
+    function detectHexFormat(hex) {
+      if (hex.startsWith('0x')) return '0x';
+      if (hex.startsWith('#')) return '#';
+      return '';
+    }
+
+    // Detect current RGB format
+    function detectRgbFormat(rgb) {
+      if (rgb.startsWith('rgb')) return 'rgb';
+      if (rgb.includes(',')) return 'comma';
+      if (rgb.includes(' ')) return 'space';
+      return 'rgb';  // default
+    }
+
+    // Calculate if background is dark
+    function isDark(r, g, b) {
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness < 125;
+    }
+
+        // Get current color values regardless of format
+    function getCurrentColor() {
+      // Try hex first
+      let rgb = parseHex(hexInput.value);
+      if (rgb) return rgb;
+
+      // Try RGB next
+      const result = parseRgb(rgbInput.value);
+      if (result) return result.values;
+
+      return null;
+    }
+
+    // Update the URL to reflect current color
+    function updateURL(rgb) {
+      if (!rgb) return;
+
+      // Format as lowercase hex without prefix
+      const hexStr = formatHex(rgb, '').toLowerCase();
+      const newPath = `/${hexStr}`;
+
+      // Only update if the path has changed
+      if (window.location.pathname !== newPath) {
+        history.replaceState(null, '', newPath);
+      }
+    }
+
+    // Update the UI with new color
+    function updateColor(rgb, sourceInput) {
+      if (!rgb) return;
+
+      // Preserve formats when updating
+      if (sourceInput === hexInput) {
+        const currentRgbFormat = detectRgbFormat(rgbInput.value);
+        rgbInput.value = formatRgb(rgb, currentRgbFormat);
+      } else {
+        const currentHexFormat = detectHexFormat(hexInput.value);
+        hexInput.value = formatHex(rgb, currentHexFormat);
+      }
+
+      // Update background
+      document.body.style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+
+      // Update text color based on brightness
+      if (isDark(...rgb)) {
+        document.body.classList.add('dark');
+      } else {
+        document.body.classList.remove('dark');
+      }
+
+      // Update URL to reflect the color
+      updateURL(rgb);
+    }
+
+    // Handle hex input
+    hexInput.addEventListener('input', (e) => {
+      const rgb = parseHex(e.target.value);
+      if (rgb) {
+        updateColor(rgb, hexInput);
+      }
+    });
+
+    // Handle RGB input
+    rgbInput.addEventListener('input', (e) => {
+      const result = parseRgb(e.target.value);
+      if (result) {
+        updateColor(result.values, rgbInput);
+      }
+    });
+
+    // Show copy indicator
+    function showCopyIndicator(sourceElementId) {
+      const sourceElement = document.getElementById(sourceElementId);
+      if (!sourceElement) return;
+
+      const indicator = document.createElement('div');
+      indicator.className = 'copy-indicator';
+      indicator.textContent = 'copied!';
+
+      const rect = sourceElement.getBoundingClientRect();
+      indicator.style.left = rect.left + 'px';
+      indicator.style.top = rect.top + 'px';
+
+      document.body.appendChild(indicator);
+
+      setTimeout(() => {
+        indicator.remove();
+      }, 800);
+    }
+
+    // Track last escape press for double-escape detection
+    let lastEscapeTime = 0;
+
+    // New keyboard shortcut handling
+    document.addEventListener('keydown', (e) => {
+      // Only handle shortcuts if no modifiers are pressed (Cmd, Ctrl, Alt)
+      // Shift is allowed
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
+      // Handle double escape to clear inputs
+      if (e.key === 'Escape') {
+        const now = Date.now();
+        if (now - lastEscapeTime < 300) {
+          // Double escape detected - clear inputs
+          hexInput.value = '';
+          rgbInput.value = '';
+          history.replaceState(null, '', '/');
+          lastEscapeTime = 0;
+          e.preventDefault();
+          return;
+        }
+        lastEscapeTime = now;
+        return;
+      }
+
+      // Always prevent default for our shortcut keys if not in an input field
+      if (!e.target.matches('input') && ['j', 'k', 'l', 'u', 'i', 'o', 'y', 'Y'].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      // Copy (yank) shortcuts - shift DOES matter here, work even without valid color
+      if (e.key === 'y') {
+        // Yank hex
+        const rgb = getCurrentColor();
+        if (rgb) {
+          const hexValue = formatHex(rgb, '#');
+          navigator.clipboard.writeText(hexValue);
+          showCopyIndicator('yank-hex');
+        } else {
+          // Shake the yank hex shortcut
+          const yankHex = document.getElementById('yank-hex');
+          yankHex.classList.add('shake');
+          setTimeout(() => yankHex.classList.remove('shake'), 300);
+        }
+        e.preventDefault();
+        return;
+      } else if (e.key === 'Y') {
+        // Yank RGB
+        const rgb = getCurrentColor();
+        if (rgb) {
+          const rgbValue = formatRgb(rgb, 'rgb');
+          navigator.clipboard.writeText(rgbValue);
+          showCopyIndicator('yank-rgb');
+        } else {
+          // Shake the yank rgb shortcut
+          const yankRgb = document.getElementById('yank-rgb');
+          yankRgb.classList.add('shake');
+          setTimeout(() => yankRgb.classList.remove('shake'), 300);
+        }
+        e.preventDefault();
+        return;
+      }
+
+      const rgb = getCurrentColor();
+      if (!rgb) return;
+
+      // RGB format shortcuts (shift doesn't matter)
+      if (e.key.toLowerCase() === 'j') {
+        rgbInput.value = formatRgb(rgb, 'rgb');
+        e.preventDefault();
+      } else if (e.key.toLowerCase() === 'k') {
+        rgbInput.value = formatRgb(rgb, 'comma');
+        e.preventDefault();
+      } else if (e.key.toLowerCase() === 'l') {
+        rgbInput.value = formatRgb(rgb, 'space');
+        e.preventDefault();
+      }
+
+      // HEX format shortcuts (shift doesn't matter)
+      else if (e.key.toLowerCase() === 'i') {
+        hexInput.value = formatHex(rgb, '0x');
+        e.preventDefault();
+      } else if (e.key.toLowerCase() === 'u') {
+        hexInput.value = formatHex(rgb, '#');
+        e.preventDefault();
+      } else if (e.key.toLowerCase() === 'o') {
+        hexInput.value = formatHex(rgb, '');
+        e.preventDefault();
+      }
+    });
+
+    // Double-click on background to load its color
+    document.body.addEventListener('dblclick', (e) => {
+      // Only if not clicking on an input or the counter
+      if (e.target.matches('input') || e.target.closest('#visitor-counter')) {
+        return;
+      }
+
+      // Get the current background color
+      const bgColor = window.getComputedStyle(document.body).backgroundColor;
+
+      // Parse rgb(r, g, b) format
+      const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const rgb = [r, g, b];
+
+        // Update both inputs
+        hexInput.value = formatHex(rgb, '#');
+        rgbInput.value = formatRgb(rgb, 'rgb');
+        updateColor(rgb, hexInput);
+      }
+    });
+
+    // Generate a random color
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return [r, g, b];
+    }
+
+    let lastKey = '';
+    let logo = null;
+    let posX = 20;
+    let posY = 20;
+    let velX = 1;
+    let velY = 1;
+    let animationId = null;
+
+    function create() {
+      if (logo) return;
+      
+      logo = document.createElement('div');
+      logo.style.position = 'absolute';
+      logo.style.width = '180px';
+      logo.style.height = '60px';
+      logo.style.backgroundColor = '#fb651e';
+      logo.style.color = 'white';
+      logo.style.display = 'flex';
+      logo.style.alignItems = 'center';
+      logo.style.justifyContent = 'center';
+      logo.style.fontSize = '20px';
+      logo.style.fontWeight = 'bold';
+      logo.style.borderRadius = '4px';
+      logo.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+      logo.style.zIndex = '1000';
+      logo.style.userSelect = 'none';
+      logo.style.left = `${posX}px`;
+      logo.style.top = `${posY}px`;
+      logo.textContent = 'Hello, HN!';
+      
+      document.body.appendChild(logo);
+    }
+
+    function animate() {
+      if (!logo) return;
+      
+      const maxX = window.innerWidth - logo.offsetWidth;
+      const maxY = window.innerHeight - logo.offsetHeight;
+      
+      posX += velX;
+      posY += velY;
+      
+      if (posX <= 0 || posX >= maxX) {
+        velX = -velX;
+        posX = posX <= 0 ? 0 : maxX;
+      }
+      
+      if (posY <= 0 || posY >= maxY) {
+        velY = -velY;
+        posY = posY <= 0 ? 0 : maxY;
+      }
+      
+      logo.style.left = `${posX}px`;
+      logo.style.top = `${posY}px`;
+      
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function activate() {
+      document.body.style.backgroundColor = '#f6f6ef';
+      document.body.classList.remove('dark');
+      
+      document.getElementById('wrap').innerHTML = '';
+      
+      create();
+      animate();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const currentKey = e.key.toLowerCase();
+      
+      if (lastKey === 'h' && currentKey === 'n') {
+        activate();
+      }
+      
+      lastKey = currentKey;
+    });
+
+    // Visitor counter with animation
+    function setupCounter() {
+      const visitorCounter = document.getElementById('visitor-counter');
+      const countDisplay = document.getElementById('count-display');
+      let currentValue = 0;
+      let previousValue = 0;
+      let realValue = 0; // The actual counter value from server
+      let inactivityTimer = null;
+      let isShuffling = false;
+      let pendingClicks = 0;
+      let animationInterval = null;
+      
+      // Create digit containers
+      for (let i = 0; i < 6; i++) {
+        const digitContainer = document.createElement('div');
+        digitContainer.className = 'digit-container';
+        digitContainer.style.display = 'inline-block';
+        digitContainer.style.position = 'relative';
+        digitContainer.style.width = '0.6em';
+        digitContainer.style.height = '1em';
+        digitContainer.style.overflow = 'hidden';
+        digitContainer.style.verticalAlign = 'top';
+        
+        // Create the two digit slots (current and next)
+        const currentDigit = document.createElement('div');
+        currentDigit.className = 'current-digit';
+        currentDigit.style.position = 'absolute';
+        currentDigit.style.top = '0';
+        currentDigit.style.left = '0';
+        currentDigit.style.width = '100%';
+        currentDigit.style.transition = 'top 0.3s ease-in-out';
+        currentDigit.textContent = '0';
+        
+        const nextDigit = document.createElement('div');
+        nextDigit.className = 'next-digit';
+        nextDigit.style.position = 'absolute';
+        nextDigit.style.top = '100%';
+        nextDigit.style.left = '0';
+        nextDigit.style.width = '100%';
+        nextDigit.style.transition = 'top 0.3s ease-in-out';
+        nextDigit.textContent = '0';
+        
+        digitContainer.appendChild(currentDigit);
+        digitContainer.appendChild(nextDigit);
+        countDisplay.appendChild(digitContainer);
+      }
+      
+      // Function to update the counter display
+      function updateCounterDisplay(newValue, animate = true) {
+        if (newValue === currentValue) return;
+        
+        previousValue = currentValue;
+        currentValue = newValue;
+        
+        const prevDigits = previousValue.toString().padStart(6, '0');
+        const newDigits = currentValue.toString().padStart(6, '0');
+        
+        const digitContainers = countDisplay.querySelectorAll('.digit-container');
+        
+        // Update each digit with animation if it changed
+        for (let i = 0; i < 6; i++) {
+          if (prevDigits[i] !== newDigits[i]) {
+            const container = digitContainers[i];
+            const currentDigit = container.querySelector('.current-digit');
+            const nextDigit = container.querySelector('.next-digit');
+            
+            if (animate) {
+              // Set the next digit value
+              nextDigit.textContent = newDigits[i];
+              
+              // Start animation
+              currentDigit.style.top = '-100%';
+              nextDigit.style.top = '0';
+              
+              // Reset after animation completes
+              setTimeout(() => {
+                currentDigit.style.transition = 'none';
+                nextDigit.style.transition = 'none';
+                
+                currentDigit.textContent = newDigits[i];
+                currentDigit.style.top = '0';
+                
+                nextDigit.style.top = '100%';
+                
+                // Restore transitions
+                setTimeout(() => {
+                  currentDigit.style.transition = 'top 0.3s ease-in-out';
+                  nextDigit.style.transition = 'top 0.3s ease-in-out';
+                }, 20);
+              }, 300);
+            } else {
+              // Update without animation
+              currentDigit.textContent = newDigits[i];
+              nextDigit.textContent = newDigits[i];
+            }
+          }
+        }
+      }
+      
+      // Fetch initial count from Cloudflare Pages
+      function initCounter() {
+        // Show the counter immediately with zeros first
+        updateCounterDisplay(0, false);
+        visitorCounter.style.opacity = '1';
+
+        // Then try to get the actual value
+        fetch('/counter/get', {
+          cache: 'no-store'
+        })
+          .then(response => response.json())
+          .then(data => {
+            const initialValue = data.value || 0;
+
+            // Start at 1 below the initial value so we can animate
+            const startValue = Math.max(0, initialValue - 1);
+            updateCounterDisplay(startValue, false);
+
+            // After a short delay, increment and animate
+            setTimeout(() => {
+              // Increment the counter
+              fetch('/counter/hit', {
+                cache: 'no-store'
+              })
+                .then(response => response.json())
+                .then(data => {
+                  // Animate to the incremented value
+                  realValue = data.value;
+                  updateCounterDisplay(data.value);
+                })
+                .catch(err => {
+                  console.error('Error incrementing counter:', err);
+                  // Make sure counter stays visible even if increment fails
+                  visitorCounter.style.opacity = '1';
+                });
+            }, 1500);
+          })
+          .catch(err => {
+            console.error('Error initializing counter:', err);
+
+            // Try direct hit as fallback
+            fetch('/counter/hit', {
+              cache: 'no-store'
+            })
+              .then(response => response.json())
+              .then(data => {
+                // Set value without animation
+                updateCounterDisplay(data.value, false);
+              })
+              .catch(err => {
+                console.error('Final API attempt failed:', err);
+                // Counter is already visible with zeros from earlier
+              });
+          });
+      }
+      
+      // Click handler for debugging - increment on click
+      countDisplay.style.pointerEvents = 'auto';
+
+      countDisplay.addEventListener('click', () => {
+        // Prevent clicking during shuffle
+        if (isShuffling) return;
+
+        // Clear any existing inactivity timer
+        if (inactivityTimer) {
+          clearTimeout(inactivityTimer);
+        }
+
+        // Always increment pending steps
+        pendingClicks++;
+
+        // Start animation loop if not already running
+        if (!animationInterval) {
+          const processNextStep = () => {
+            if (pendingClicks > 0) {
+              pendingClicks--;
+              updateCounterDisplay(currentValue + 1);
+
+              // Continue processing after 100ms
+              animationInterval = setTimeout(processNextStep, 100);
+            } else {
+              // No more pending steps
+              animationInterval = null;
+            }
+          };
+
+          // Start after 100ms delay
+          animationInterval = setTimeout(processNextStep, 100);
+        }
+
+        // After 1 second of inactivity, shuffle back to real value
+        inactivityTimer = setTimeout(() => {
+          // Stop the animation loop
+          if (animationInterval) {
+            clearTimeout(animationInterval);
+            animationInterval = null;
+          }
+          pendingClicks = 0;
+
+          isShuffling = true;
+
+          // Shuffle through random numbers for fun
+          let shuffleCount = 0;
+          const shuffleInterval = setInterval(() => {
+            const randomValue = Math.floor(Math.random() * 999999);
+            updateCounterDisplay(randomValue);
+            shuffleCount++;
+
+            if (shuffleCount >= 8) {
+              clearInterval(shuffleInterval);
+              // Return to real value
+              updateCounterDisplay(realValue);
+              isShuffling = false;
+            }
+          }, 50);
+        }, 1000);
+      });
+
+      // Call the init function
+      initCounter();
+
+      // Safety check to ensure counter appears even if all API attempts fail
+      setTimeout(() => {
+        if (parseFloat(visitorCounter.style.opacity) < 0.1) {
+          console.log('Counter failed to initialize, showing empty counter');
+          // Force counter to show with zeros
+          visitorCounter.style.opacity = '1';
+        }
+      }, 3000);
+    }
+    
+    // Load color from URL query parameter or use random color
+    function loadInitialColor() {
+      // Try multiple sources: query string, hash, and path
+      const queryString = window.location.search.slice(1); // Remove the '?'
+      const hashString = window.location.hash.slice(1); // Remove the '#'
+      const pathString = window.location.pathname.slice(1); // Remove the leading '/'
+
+      // Try in order: query > hash > path
+      const colorSource = queryString || hashString || (pathString && pathString !== 'index.html' && pathString !== 'index.htm' ? pathString : '');
+
+      if (colorSource) {
+        // Try to parse as hex first
+        let rgb = parseHex(colorSource);
+        if (rgb) {
+          hexInput.value = formatHex(rgb, detectHexFormat(colorSource) || '#');
+          updateColor(rgb, hexInput);
+          return;
+        }
+
+        // Try to parse as RGB
+        const result = parseRgb(colorSource);
+        if (result) {
+          rgbInput.value = formatRgb(result.values, result.format);
+          updateColor(result.values, rgbInput);
+          return;
+        }
+      }
+
+      // No valid query param, use random color
+      const randomColor = getRandomColor();
+      document.body.style.backgroundColor = `rgb(${randomColor[0]}, ${randomColor[1]}, ${randomColor[2]})`;
+
+      // Update text color based on brightness
+      if (isDark(...randomColor)) {
+        document.body.classList.add('dark');
+      } else {
+        document.body.classList.remove('dark');
+      }
+    }
+
+    // Set random color and focus hex field on page load
+    window.addEventListener('load', () => {
+      loadInitialColor();
+      hexInput.focus();
+
+      // Setup visitor counter
+      setupCounter();
+    });
+  </script>
+</body>
+</html>

@@ -13,8 +13,8 @@ export async function onRequest(context) {
   }
 
   // For index requests or color paths, inject dynamic meta tags
-  const isIndexPath = url.pathname === '/index.htm' || url.pathname === '/index.html' || url.pathname === '/';
-  const isPotentialColorPath = !isIndexPath && !url.pathname.startsWith('/counter/') && !url.pathname.startsWith('/preview') && !url.pathname.startsWith('/functions/');
+  const isIndexPath = url.pathname === '/app.html' || url.pathname === '/';
+  const isPotentialColorPath = !isIndexPath && !url.pathname.startsWith('/counter/') && !url.pathname.startsWith('/preview') && !url.pathname.startsWith('/functions/') && !url.pathname.startsWith('/index.');
 
   if (isIndexPath || isPotentialColorPath) {
     // Try query string first, then path
@@ -35,8 +35,9 @@ export async function onRequest(context) {
       }
 
       if (/^[0-9a-f]{6}$/i.test(hex)) {
-        // Fetch the static HTML
-        const response = await context.next();
+        // Fetch the app HTML
+        const appUrl = new URL('/app.html', request.url);
+        const response = await env.ASSETS.fetch(appUrl);
         let html = await response.text();
 
         // Get CSS color name if available
@@ -77,6 +78,12 @@ export async function onRequest(context) {
         });
       }
     }
+  }
+
+  // Serve app.html for root path
+  if (url.pathname === '/' || url.pathname === '/app.html') {
+    const appUrl = new URL('/app.html', request.url);
+    return env.ASSETS.fetch(appUrl);
   }
 
   // Pass through for all other requests
