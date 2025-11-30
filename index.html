@@ -337,6 +337,20 @@
       return null;
     }
 
+    // Update the URL to reflect current color
+    function updateURL(rgb) {
+      if (!rgb) return;
+
+      // Format as lowercase hex without prefix
+      const hexStr = formatHex(rgb, '').toLowerCase();
+      const newPath = `/${hexStr}`;
+
+      // Only update if the path has changed
+      if (window.location.pathname !== newPath) {
+        history.replaceState(null, '', newPath);
+      }
+    }
+
     // Update the UI with new color
     function updateColor(rgb, sourceInput) {
       if (!rgb) return;
@@ -359,6 +373,9 @@
       } else {
         document.body.classList.remove('dark');
       }
+
+      // Update URL to reflect the color
+      updateURL(rgb);
     }
 
     // Handle hex input
@@ -397,11 +414,30 @@
       }, 800);
     }
 
+    // Track last escape press for double-escape detection
+    let lastEscapeTime = 0;
+
     // New keyboard shortcut handling
     document.addEventListener('keydown', (e) => {
       // Only handle shortcuts if no modifiers are pressed (Cmd, Ctrl, Alt)
       // Shift is allowed
       if (e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
+      // Handle double escape to clear inputs
+      if (e.key === 'Escape') {
+        const now = Date.now();
+        if (now - lastEscapeTime < 300) {
+          // Double escape detected - clear inputs
+          hexInput.value = '';
+          rgbInput.value = '';
+          history.replaceState(null, '', '/');
+          lastEscapeTime = 0;
+          e.preventDefault();
+          return;
+        }
+        lastEscapeTime = now;
         return;
       }
 
