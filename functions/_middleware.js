@@ -112,7 +112,7 @@ function getCSSColorName(hex) {
     // Custom
     '001ced': 'iced',
     // Standard CSS colors (140)
-    'f0f8ff': 'aliceblue', 'faebd7': 'antiquewhite', '00ffff': 'aqua', '7fffd4': 'aquamarine',
+    'f0f8ff': 'aliceblue', 'faebd7': 'antiquewhite', '7fffd4': 'aquamarine',
     'f0ffff': 'azure', 'f5f5dc': 'beige', 'ffe4c4': 'bisque', '000000': 'black',
     'ffebcd': 'blanchedalmond', '0000ff': 'blue', '8a2be2': 'blueviolet', 'a52a2a': 'brown',
     'deb887': 'burlywood', '5f9ea0': 'cadetblue', '7fff00': 'chartreuse', 'd2691e': 'chocolate',
@@ -123,7 +123,7 @@ function getCSSColorName(hex) {
     'e9967a': 'darksalmon', '8fbc8f': 'darkseagreen', '483d8b': 'darkslateblue', '2f4f4f': 'darkslategray',
     '00ced1': 'darkturquoise', '9400d3': 'darkviolet', 'ff1493': 'deeppink', '00bfff': 'deepskyblue',
     '696969': 'dimgray', '1e90ff': 'dodgerblue', 'b22222': 'firebrick', 'fffaf0': 'floralwhite',
-    '228b22': 'forestgreen', 'ff00ff': 'fuchsia', 'dcdcdc': 'gainsboro', 'f8f8ff': 'ghostwhite',
+    '228b22': 'forestgreen', 'dcdcdc': 'gainsboro', 'f8f8ff': 'ghostwhite',
     'ffd700': 'gold', 'daa520': 'goldenrod', '808080': 'gray', '008000': 'green',
     'adff2f': 'greenyellow', 'f0fff0': 'honeydew', 'ff69b4': 'hotpink', 'cd5c5c': 'indianred',
     '4b0082': 'indigo', 'fffff0': 'ivory', 'f0e68c': 'khaki', 'e6e6fa': 'lavender',
