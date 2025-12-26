@@ -1,0 +1,10 @@
+{
+  "name": "hexrgb",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

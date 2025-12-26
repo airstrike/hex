@@ -1,5 +1,8 @@
-dev:
+build:
+	bun run build
+
+dev: build
 	wrangler pages dev .
 
-deploy:
+deploy: build
 	wrangler pages deploy .
