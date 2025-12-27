@@ -1,9 +1,7 @@
 # Custom colors (with optional aliases)
 custom:
   iced: "001ced"
-  savoy blue:
-    hex: "4b61d1"
-    aliases: [savoyblue, savoy-blue, savoy_blue, savoy]
+  savoy blue: "4b61d1"
 
 # Standard CSS colors (140)
 css:
@@ -26,7 +24,9 @@ css:
   cornflowerblue: "6495ed"
   cornsilk: "fff8dc"
   crimson: "dc143c"
-  cyan: "00ffff"
+  cyan:
+    hex: "00ffff"
+    aliases: [aqua]
   darkblue: "00008b"
   darkcyan: "008b8b"
   darkgoldenrod: "b8860b"
@@ -84,7 +84,9 @@ css:
   lime: "00ff00"
   limegreen: "32cd32"
   linen: "faf0e6"
-  magenta: "ff00ff"
+  magenta:
+    hex: "ff00ff"
+    aliases: [fuchsia]
   maroon: "800000"
   mediumaquamarine: "66cdaa"
   mediumblue: "0000cd"

@@ -12,26 +12,23 @@ const hexToName = {};
 // Build name -> hex map (for URL lookup)
 const nameToHex = {};
 
-// Process custom colors
-for (const [name, value] of Object.entries(colors.custom || {})) {
-  // Support both simple format (iced: "001ced") and object format ({hex, aliases})
-  const hex = (typeof value === 'string' ? value : value.hex).toLowerCase();
-  const aliases = typeof value === 'object' ? (value.aliases || []) : [];
+// Process colors (supports both "name: hex" and "name: {hex, aliases}")
+function processColors(colorMap) {
+  for (const [name, value] of Object.entries(colorMap || {})) {
+    const hex = (typeof value === 'string' ? value : value.hex).toLowerCase().padStart(6, '0');
+    const aliases = typeof value === 'object' ? (value.aliases || []) : [];
 
-  hexToName[hex] = name;
-  nameToHex[name.toLowerCase()] = hex;
+    hexToName[hex] = name;
+    nameToHex[name.toLowerCase()] = hex;
 
-  for (const alias of aliases) {
-    nameToHex[alias.toLowerCase()] = hex;
+    for (const alias of aliases) {
+      nameToHex[alias.toLowerCase()] = hex;
+    }
   }
 }
 
-// Process CSS colors
-for (const [name, hex] of Object.entries(colors.css || {})) {
-  const hexLower = String(hex).toLowerCase().padStart(6, '0');
-  hexToName[hexLower] = name;
-  nameToHex[name.toLowerCase()] = hexLower;
-}
+processColors(colors.custom);
+processColors(colors.css);
 
 const middleware = `// AUTO-GENERATED - DO NOT EDIT
 // Edit colors.yaml and run: npm run build
