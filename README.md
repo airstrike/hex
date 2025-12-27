@@ -75,13 +75,15 @@ Edit `colors.yaml`:
 
 ```yaml
 custom:
-  # Simple format
+  # Simple format (fuzzy matching handles savoy-blue, savoy_blue, etc.)
   iced: "001ced"
+  savoy blue: "4b61d1"
 
-  # With aliases
-  savoy blue:
-    hex: "4b61d1"
-    aliases: [savoyblue, savoy-blue, savoy_blue, savoy]
+css:
+  # Aliases for genuinely different names (same hex)
+  cyan:
+    hex: "00ffff"
+    aliases: [aqua]
 ```
 
 Then rebuild: `bun run build`
