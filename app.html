@@ -106,6 +106,19 @@
       color: rgba(0, 0, 0, 0.6);
     }
 
+    #color-name {
+      text-align: center;
+      font-size: 24px;
+      font-weight: 300;
+      opacity: 0.5;
+      margin-bottom: 15px;
+      min-height: 32px;
+    }
+
+    #color-name:empty {
+      display: none;
+    }
+
     #shortcuts {
       margin-top: 25px;
       font-size: 14px;
@@ -206,6 +219,7 @@
 </head>
 <body>
   <div id="wrap">
+    <div id="color-name"></div>
     <input id="hex" type="text" placeholder="hex" autocomplete="off">
     <input id="rgb" type="text" placeholder="rgb" autocomplete="off">
     <div id="shortcuts">
@@ -235,6 +249,7 @@
   <script>
     const hexInput = document.getElementById('hex');
     const rgbInput = document.getElementById('rgb');
+    const colorNameEl = document.getElementById('color-name');
 
     // Parse hex in various formats
     function parseHex(hex) {
@@ -367,6 +382,10 @@
 
       // Update background
       document.body.style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+
+      // Update color name display
+      const hex = rgb.map(c => c.toString(16).padStart(2, '0')).join('').toLowerCase();
+      colorNameEl.textContent = hexToName[hex] || '';
 
       // Update text color based on brightness
       if (isDark(...rgb)) {
