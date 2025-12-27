@@ -231,6 +231,7 @@
     <div id="count-display"></div>
   </div>
 
+  <script src="colors.js"></script>
   <script>
     const hexInput = document.getElementById('hex');
     const rgbInput = document.getElementById('rgb');
@@ -859,12 +860,15 @@
       const colorSource = queryString || hashString || (pathString && pathString !== 'index.html' && pathString !== 'index.htm' ? pathString : '');
 
       if (colorSource) {
-        // Try to parse as hex first
-        let rgb = parseHex(colorSource);
-        if (rgb) {
-          hexInput.value = formatHex(rgb, detectHexFormat(colorSource) || '#');
-          updateColor(rgb, hexInput);
-          return;
+        // Try to parse color (hex code or color name)
+        const hex = tryParseColor(colorSource);
+        if (hex) {
+          const rgb = parseHex(hex);
+          if (rgb) {
+            hexInput.value = formatHex(rgb, detectHexFormat(colorSource) || '#');
+            updateColor(rgb, hexInput);
+            return;
+          }
         }
 
         // Try to parse as RGB

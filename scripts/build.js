@@ -3,7 +3,8 @@ const path = require('path');
 const yaml = require('js-yaml');
 
 const colorsPath = path.join(__dirname, '..', 'colors.yaml');
-const outputPath = path.join(__dirname, '..', 'functions', '_middleware.js');
+const middlewarePath = path.join(__dirname, '..', 'functions', '_middleware.js');
+const colorsJsPath = path.join(__dirname, '..', 'colors.js');
 
 const colors = yaml.load(fs.readFileSync(colorsPath, 'utf8'));
 
@@ -33,11 +34,7 @@ processColors(colors.css);
 const middleware = `// AUTO-GENERATED - DO NOT EDIT
 // Edit colors.yaml and run: npm run build
 
-// Hex -> display name
-const hexToName = ${JSON.stringify(hexToName, null, 2)};
-
-// Name -> hex (includes aliases)
-const nameToHex = ${JSON.stringify(nameToHex, null, 2)};
+const { hexToName, nameToHex, tryParseColor, lookupColorName } = require('../colors.js');
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -119,56 +116,6 @@ export async function onRequest(context) {
   return context.next();
 }
 
-// Try to parse input as hex code first, then as color name
-function tryParseColor(input) {
-  // Clean prefix
-  let cleaned = input.replace(/^0x/i, '').replace(/^#/, '');
-
-  // 1. If input is ONLY hex chars, treat as hex code (highest priority)
-  if (/^[0-9a-f]{3}$/i.test(cleaned)) {
-    return (cleaned[0] + cleaned[0] + cleaned[1] + cleaned[1] + cleaned[2] + cleaned[2]).toLowerCase();
-  }
-  if (/^[0-9a-f]{6}$/i.test(cleaned)) {
-    return cleaned.toLowerCase();
-  }
-
-  // 2. Try as color name
-  return lookupColorName(input);
-}
-
-// Lookup color name with fuzzy matching
-function lookupColorName(input) {
-  const normalized = input.toLowerCase().trim();
-
-  // Exact match
-  if (nameToHex[normalized]) {
-    return nameToHex[normalized];
-  }
-
-  // Strip - and _ and try again
-  const stripped = normalized.replace(/[-_]/g, '');
-  if (nameToHex[stripped]) {
-    return nameToHex[stripped];
-  }
-
-  // Check all keys with normalization
-  for (const [name, hex] of Object.entries(nameToHex)) {
-    if (name.replace(/[-_ ]/g, '') === stripped) {
-      return hex;
-    }
-  }
-
-  // startsWith match (only if unambiguous)
-  const matches = Object.entries(nameToHex).filter(([name]) =>
-    name.replace(/[-_ ]/g, '').startsWith(stripped)
-  );
-  if (matches.length === 1) {
-    return matches[0][1];
-  }
-
-  return null;
-}
-
 async function handleCounterGet(env) {
   try {
     const count = await env.HEX_STORAGE.get('visitor_count');
@@ -236,7 +183,40 @@ async function handleCounterHit(env, request) {
 }
 `;
 
-fs.writeFileSync(outputPath, middleware);
-console.log('Generated functions/_middleware.js');
-console.log(`  ${Object.keys(hexToName).length} colors (hex -> name)`);
-console.log(`  ${Object.keys(nameToHex).length} entries (name -> hex, includes aliases)`);
+// Generate shared colors.js
+const colorsJs = `// AUTO-GENERATED from colors.yaml - DO NOT EDIT
+const hexToName = ${JSON.stringify(hexToName)};
+const nameToHex = ${JSON.stringify(nameToHex)};
+
+function tryParseColor(input) {
+  const cleaned = input.replace(/^0x/i, '').replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(cleaned)) {
+    return (cleaned[0] + cleaned[0] + cleaned[1] + cleaned[1] + cleaned[2] + cleaned[2]).toLowerCase();
+  }
+  if (/^[0-9a-f]{6}$/i.test(cleaned)) {
+    return cleaned.toLowerCase();
+  }
+  return lookupColorName(input);
+}
+
+function lookupColorName(input) {
+  const normalized = input.toLowerCase().trim();
+  if (nameToHex[normalized]) return nameToHex[normalized];
+  const stripped = normalized.replace(/[-_]/g, '');
+  if (nameToHex[stripped]) return nameToHex[stripped];
+  for (const [name, hex] of Object.entries(nameToHex)) {
+    if (name.replace(/[-_ ]/g, '') === stripped) return hex;
+  }
+  const matches = Object.entries(nameToHex).filter(([name]) =>
+    name.replace(/[-_ ]/g, '').startsWith(stripped)
+  );
+  return matches.length === 1 ? matches[0][1] : null;
+}
+
+if (typeof module !== 'undefined') module.exports = { hexToName, nameToHex, tryParseColor, lookupColorName };
+`;
+
+fs.writeFileSync(colorsJsPath, colorsJs);
+fs.writeFileSync(middlewarePath, middleware);
+console.log('Generated colors.js, functions/_middleware.js');
+console.log(`  ${Object.keys(hexToName).length} colors, ${Object.keys(nameToHex).length} lookups`);
